@@ -1,0 +1,9 @@
+node_modules
+app/node_modules
+app/build
+.git
+.env
+private-key.pem
+zmk-config
+plan
+*.log

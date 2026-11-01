@@ -78,6 +78,29 @@ function parseKeymap (keymap) {
   })
 }
 
+function parseBlocks (text) {
+  const blocks = { behaviors: '', combos: '', conditional_layers: '', macros: '' }
+  if (!text) return blocks
+  function extract(keyword) {
+    const re = new RegExp('\\b' + keyword + '\\s*\\{', 'g')
+    const m = re.exec(text)
+    if (!m) return ''
+    let i = text.indexOf('{', m.index)
+    let depth = 0
+    let start = i
+    for (let j = i; j < text.length; j++) {
+      if (text[j] === '{') depth++
+      else if (text[j] === '}') { depth--; if (depth === 0) { return text.slice(start + 1, j).trim() } }
+    }
+    return ''
+  }
+  blocks.behaviors = extract('behaviors')
+  blocks.combos = extract('combos')
+  blocks.conditional_layers = extract('conditional_layers')
+  blocks.macros = extract('macros')
+  return blocks
+}
+
 function generateKeymap (layout, keymap, template) {
   const encoded = encodeKeymap(keymap)
   return {
@@ -89,6 +112,10 @@ function generateKeymap (layout, keymap, template) {
 function renderTemplate(template, params) {
   const includesPattern = /\{\{\s*behaviour_includes\s*\}\}/
   const layersPattern = /\{\{\s*rendered_layers\s*\}\}/
+  const behaviorsPattern = /\{\{\s*behaviors_block\s*\}\}/
+  const combosPattern = /\{\{\s*combos_block\s*\}\}/
+  const conditionalPattern = /\{\{\s*conditional_layers_block\s*\}\}/
+  const macrosPattern = /\{\{\s*macros_block\s*\}\}/
 
   const renderedLayers = params.layers.map((layer, i) => {
     const name = i === 0 ? 'default_layer' : `layer_${params.layerNames[i] || i}`
@@ -106,9 +133,20 @@ ${rendered}
 `
   })
 
+  function wrapBlock(keyword, content) {
+    const c = (content || '').trim()
+    if (!c) return ''
+    if (new RegExp('\\b' + keyword + '\\s*\\{').test(c)) return `\n    ${c}\n`
+    return `\n    ${keyword} {\n        compatible = "zmk,${keyword.replace(/_/g,'-')}";\n${c.split('\n').map(l => '        ' + l).join('\n')}\n    };\n`
+  }
+
   return template
     .replace(includesPattern, params.behaviourHeaders.join('\n'))
     .replace(layersPattern, renderedLayers.join(''))
+    .replace(behaviorsPattern, wrapBlock('behaviors', params.behaviorsBlock))
+    .replace(combosPattern, wrapBlock('combos', params.combosBlock))
+    .replace(conditionalPattern, wrapBlock('conditional_layers', params.conditionalLayersBlock))
+    .replace(macrosPattern, wrapBlock('macros', params.macrosBlock))
 }
 
 function generateKeymapCode (layout, keymap, encoded, template) {
@@ -121,7 +159,11 @@ function generateKeymapCode (layout, keymap, encoded, template) {
     layout,
     behaviourHeaders,
     layers: encoded.layers,
-    layerNames: names
+    layerNames: names,
+    behaviorsBlock: keymap.behaviors,
+    combosBlock: keymap.combos,
+    conditionalLayersBlock: keymap.conditional_layers,
+    macrosBlock: keymap.macros
   })
 }
 
@@ -181,6 +223,7 @@ module.exports = {
   KeymapValidationError,
   encodeKeymap,
   parseKeymap,
+  parseBlocks,
   generateKeymap,
   validateKeymapJson
 }

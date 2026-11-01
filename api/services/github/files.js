@@ -18,6 +18,18 @@ async function fetchKeyboardFiles (installationId, repository, branch) {
   const { data: info } = await fetchFile(installationToken, repository, 'config/info.json', { raw: true, branch })
   const keymap = await fetchKeymap(installationToken, repository, branch)
   const originalCodeKeymap = await findCodeKeymap(installationToken, repository, branch)
+  // parse extra blocks (combos, macros, conditional_layers, behaviors) from the .keymap file
+  try {
+    const { data: codeContent } = await fetchFile(installationToken, repository, originalCodeKeymap.path, { raw: true, branch })
+    const blocks = zmk.parseBlocks(codeContent)
+    for (const k of ['behaviors', 'combos', 'conditional_layers', 'macros']) {
+      if (keymap[k] === undefined || keymap[k] === null || keymap[k] === '') {
+        keymap[k] = blocks[k] || ''
+      }
+    }
+  } catch (e) {
+    // ignore
+  }
   return { info, keymap, originalCodeKeymap }
 }
 

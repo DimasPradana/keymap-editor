@@ -16,6 +16,10 @@ const keymapTemplate = `
 {{behaviour_includes}}
 
 / {
+{{behaviors_block}}
+{{combos_block}}
+{{conditional_layers_block}}
+{{macros_block}}
     keymap {
         compatible = "zmk,keymap";
 

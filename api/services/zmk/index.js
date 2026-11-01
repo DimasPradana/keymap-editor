@@ -1,5 +1,7 @@
 const {
   parseKeyBinding,
+  parseKeymap,
+  parseBlocks,
   generateKeymap
 } = require('./keymap')
 
@@ -13,6 +15,8 @@ const {
 
 module.exports = {
   parseKeyBinding,
+  parseKeymap,
+  parseBlocks,
   generateKeymap,
   loadBehaviors,
   loadKeycodes,

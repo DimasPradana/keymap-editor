@@ -85,3 +85,5 @@ zmk-config
 
 private-key.pem
 .env
+# Private keys
+*.pem
